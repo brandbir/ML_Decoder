@@ -24,6 +24,16 @@ def parse_args(parser):
 
 
 def average_precision(output, target):
+    '''
+    e.g. target: [0, 1, 0, 1]
+         output: [0.75, 0.3, 0.2, 0.8]
+        
+         total_pos = 2
+         output: [0.75, 0.3 (rank:2), 0.2, 0.8 (rank:1)]
+
+         # locate predictions with respect to prediction score
+         prec@i = sum([1, 0, 2, 0] / [1, 2, 3, 4])/ (total_pos + epsilon)
+    '''
     epsilon = 1e-8
 
     # sort examples
@@ -94,13 +104,14 @@ class AverageMeter(object):
 
 
 class CocoDetection(datasets.coco.CocoDetection):
-    def __init__(self, root, annFile, transform=None, target_transform=None):
+    def __init__(self, root, annFile, transform=None, target_transform=None, num_classes=80):
         self.root = root
         self.coco = COCO(annFile)
 
         self.ids = list(self.coco.imgToAnns.keys())
         self.transform = transform
         self.target_transform = target_transform
+        self.num_classes = num_classes
         self.cat2cat = dict()
         for cat in self.coco.cats.keys():
             self.cat2cat[cat] = len(self.cat2cat)
@@ -112,7 +123,7 @@ class CocoDetection(datasets.coco.CocoDetection):
         ann_ids = coco.getAnnIds(imgIds=img_id)
         target = coco.loadAnns(ann_ids)
 
-        output = torch.zeros((3, 80), dtype=torch.long)
+        output = torch.zeros((3, self.num_classes), dtype=torch.long)
         for obj in target:
             if obj['area'] < 32 * 32:
                 output[0][self.cat2cat[obj['category_id']]] = 1

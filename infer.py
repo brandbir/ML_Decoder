@@ -44,7 +44,7 @@ def main():
     print('creating model {}...'.format(args.model_name))
     model = create_model(args, load_head=True).cuda()
     state = torch.load(args.model_path, map_location='cpu')
-    model.load_state_dict(state['model'], strict=True)
+    model.load_state_dict(state['model'], strict=True) ## .eval()?
     ########### eliminate BN for faster inference ###########
     model = model.cpu()
     model = InplacABN_to_ABN(model)
